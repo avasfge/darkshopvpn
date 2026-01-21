@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SHADOW NETWORK</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&display=swap');
+        :root { --accent: #2dd4bf; }
+        body { background: #08080a; font-family: 'JetBrains Mono', monospace; color: #94a3b8; overflow-x: hidden; }
+        .text-accent { color: var(--accent); }
+        .bg-accent { background-color: var(--accent); }
+        .tab-active { color: var(--accent) !important; border-bottom: 3px solid var(--accent); }
+        .glass { background: rgba(20, 20, 23, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid #1c1c1f; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .glow-text { text-shadow: 0 0 10px rgba(45, 212, 191, 0.4); }
+    </style>
+</head>
+<body class="select-none">
+
+    <header class="sticky top-0 z-50 glass px-6 py-5 flex justify-between items-center">
+        <div>
+            <p class="text-[10px] font-bold text-accent tracking-[0.4em] uppercase">System: Live</p>
+            <h1 class="text-lg font-black text-white italic tracking-tighter uppercase">Shadow_Net.v4</h1>
+        </div>
+        <div class="bg-accent/10 p-3 rounded-2xl border border-accent/20">
+            <i data-lucide="shield-check" class="w-6 h-6 text-accent"></i>
+        </div>
+    </header>
+
+    <main class="p-6 pb-32">
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-zinc-900/50 border border-zinc-800 p-5 rounded-[2rem]">
+                <p class="text-[9px] uppercase font-bold text-slate-500 mb-2 tracking-widest text-center">Active_Nodes</p>
+                <p id="stat-nodes" class="text-xl font-black text-white text-center italic tracking-tighter glow-text">---</p>
+            </div>
+            <div class="bg-zinc-900/50 border border-zinc-800 p-5 rounded-[2rem]">
+                <p class="text-[9px] uppercase font-bold text-slate-500 mb-2 tracking-widest text-center">Traffic_24H</p>
+                <p class="text-xl font-black text-white text-center italic tracking-tighter glow-text">
+                    <span id="stat-traffic">0.000</span> <span class="text-[10px] text-accent not-italic uppercase ml-1">gb</span>
+                </p>
+            </div>
+        </div>
+
+        <div id="view-shop" class="animate__animated animate__fadeIn">
+            <div id="category-chips" class="flex gap-6 overflow-x-auto no-scrollbar mb-8 border-b border-zinc-800 pb-2">
+                <button onclick="filterItems('Proxy', this)" class="tab-active text-xs font-bold uppercase tracking-widest pb-3 transition-all">Proxy</button>
+                <button onclick="filterItems('VPN', this)" class="text-xs font-bold uppercase tracking-widest text-slate-600 pb-3 transition-all">VPN</button>
+                <button onclick="filterItems('Accounts', this)" class="text-xs font-bold uppercase tracking-widest text-slate-600 pb-3 transition-all">Accounts</button>
+            </div>
+            <div id="product-list" class="space-y-4"></div>
+        </div>
+
+        <div id="view-profile" class="hidden animate__animated animate__fadeIn space-y-6">
+            <div class="bg-gradient-to-br from-zinc-900 to-black border border-accent/20 p-8 rounded-[2.5rem] shadow-2xl">
+                <div class="flex justify-between items-start mb-8">
+                    <div>
+                        <h2 id="p-username" class="text-2xl font-black text-white italic tracking-tighter">@USER</h2>
+                        <p id="p-id" class="text-xs text-slate-600 mt-1 uppercase font-bold">UID: 00000000</p>
+                    </div>
+                    <span id="p-role" class="text-[9px] bg-accent/20 text-accent px-3 py-1 rounded-full font-bold uppercase tracking-tighter">Resident</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-black/40 p-5 rounded-3xl border border-white/5 text-center">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Balance</p>
+                        <p id="p-balance" class="text-xl font-black text-accent tracking-tighter">0.00$</p>
+                    </div>
+                    <div class="bg-black/40 p-5 rounded-3xl border border-white/5 text-center">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Created</p>
+                        <p id="p-date" class="text-[12px] font-bold text-white mt-1">---</p>
+                    </div>
+                </div>
+            </div>
+            <div id="order-list" class="space-y-4"></div>
+        </div>
+    </main>
+
+    <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] glass border border-white/10 rounded-[2.5rem] p-3 flex justify-around items-center z-50 shadow-2xl">
+        <button onclick="switchTab('shop')" id="btn-shop" class="flex-1 py-3 flex justify-center text-accent transition-all"><i data-lucide="layout-grid" class="w-7 h-7"></i></button>
+        <button onclick="switchTab('profile')" id="btn-profile" class="flex-1 py-3 flex justify-center text-slate-600 transition-all"><i data-lucide="user-square" class="w-7 h-7"></i></button>
+    </nav>
+
+    <div id="modal-pay" class="hidden fixed inset-0 z-[100] flex items-end justify-center p-4">
+        <div class="absolute inset-0 bg-black/95 backdrop-blur-md" onclick="closePay()"></div>
+        <div class="relative w-full max-w-md bg-zinc-900 border border-accent/20 rounded-[3rem] p-10 animate__animated animate__slideInUp">
+            <div id="timer-line" class="absolute top-0 left-0 h-1 bg-accent transition-all ease-linear" style="width: 100%"></div>
+            <div class="flex justify-between items-start mb-10">
+                <div>
+                    <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">RESERVE_NODE</h2>
+                    <p id="timer-text" class="text-xs text-accent font-bold mt-2 uppercase tracking-widest">TTL: 15:00</p>
+                </div>
+                <p id="m-price" class="text-3xl font-black text-white italic">0.00$</p>
+            </div>
+            <div class="bg-black/60 border border-zinc-800 p-6 rounded-[2rem] mb-10" onclick="copyWallet()">
+                <p class="text-[10px] text-slate-500 font-bold uppercase mb-3 italic">Gateway (USDT.TRC20):</p>
+                <p id="wallet" class="text-[11px] text-slate-200 break-all font-bold leading-relaxed">LOADING...</p>
+            </div>
+            <button onclick="sendOrder()" id="pay-btn" class="w-full bg-accent text-black py-6 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.4em] active:scale-95 transition-all">Execute_Request</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbxr6U3sezwNjry8Kli4vEN6stlenwBbNiAE7jEbCsQJABYacZlT-AEOeCKtpPs1_NUO/exec";
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        lucide.createIcons();
+
+        let allProducts = [], currentItem = null, timer = null, currentTraffic = 4250.45;
+
+        async function api(data) {
+            try {
+                const res = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ userId: tg.initDataUnsafe?.user?.id || "0", username: tg.initDataUnsafe?.user?.username || "Guest", ...data }) 
+                });
+                return await res.json();
+            } catch (e) { return null; }
+        }
+
+        async function init() {
+            const data = await api({ action: 'getProducts' });
+            if (!data) return;
+            allProducts = data.products;
+            document.getElementById('wallet').innerText = data.wallet;
+            document.getElementById('stat-nodes').innerText = data.stats.nodes;
+            currentTraffic = parseFloat(data.stats.traffic);
+            document.getElementById('stat-traffic').innerText = currentTraffic.toFixed(3);
+            
+            // Запуск
+            const firstBtn = document.querySelector('#category-chips button');
+            filterItems(firstBtn.innerText.trim(), firstBtn);
+            startLiveTraffic();
+        }
+
+        function filterItems(cat, el) {
+            document.querySelectorAll('#category-chips button').forEach(b => { b.classList.remove('tab-active'); b.classList.add('text-slate-600'); });
+            el.classList.add('tab-active'); el.classList.remove('text-slate-600');
+
+            const filtered = allProducts.filter(p => p.cat.toLowerCase() === cat.toLowerCase());
+            const list = document.getElementById('product-list');
+            
+            if (!filtered.length) {
+                list.innerHTML = `<p class="text-center py-10 opacity-30 text-[10px] uppercase">No ${cat} available</p>`;
+            } else {
+                list.innerHTML = filtered.map(p => `
+                    <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-[2.5rem] flex justify-between items-center active:border-accent/50 transition-all animate__animated animate__fadeInUp" onclick='openPay(${JSON.stringify(p)})'>
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="text-lg font-black text-white italic uppercase tracking-tighter">${p.country}</span>
+                                <span class="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded font-bold uppercase tracking-tighter">${p.ping}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                    <div class="bg-accent h-full shadow-[0_0_8px_#2dd4bf]" style="width: ${p.load}%"></div>
+                                </div>
+                                <span class="text-[10px] font-bold text-slate-600 uppercase italic">Load: ${p.load}%</span>
+                            </div>
+                        </div>
+                        <span class="text-lg font-black text-white italic tracking-tighter">${p.price}$</span>
+                    </div>`).join('');
+            }
+            lucide.createIcons();
+        }
+
+        async function switchTab(tab) {
+            const isShop = tab === 'shop';
+            document.getElementById('view-shop').classList.toggle('hidden', !isShop);
+            document.getElementById('view-profile').classList.toggle('hidden', isShop);
+            document.getElementById('btn-shop').className = isShop ? 'flex-1 py-3 flex justify-center text-accent' : 'flex-1 py-3 flex justify-center text-slate-600';
+            document.getElementById('btn-profile').className = !isShop ? 'flex-1 py-3 flex justify-center text-accent' : 'flex-1 py-3 flex justify-center text-slate-600';
+            
+            if(!isShop) {
+                const p = await api({ action: 'getProfile' });
+                document.getElementById('p-username').innerText = '@' + p.username;
+                document.getElementById('p-id').innerText = 'UID: ' + p.id;
+                document.getElementById('p-balance').innerText = p.balance + '$';
+                document.getElementById('p-date').innerText = p.date;
+                const ord = await api({ action: 'getUserOrders' });
+                document.getElementById('order-list').innerHTML = ord.orders.map(o => `
+                    <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-[2rem]">
+                        <div class="flex justify-between mb-4 items-center">
+                            <span class="text-[10px] font-bold text-slate-600 uppercase italic">${o.date}</span>
+                            <span class="text-[10px] font-bold uppercase ${o.status==='Paid'?'text-accent':'text-orange-500'} italic">${o.status}</span>
+                        </div>
+                        <div class="bg-black/50 p-5 rounded-2xl border border-white/5 text-[11px] text-slate-300 break-all select-all font-bold leading-relaxed">${o.data}</div>
+                    </div>`).join('');
+            }
+            tg.HapticFeedback.impactOccurred('medium');
+            lucide.createIcons();
+        }
+
+        function openPay(item) {
+            currentItem = item;
+            document.getElementById('m-price').innerText = item.price + '$';
+            document.getElementById('modal-pay').classList.remove('hidden');
+            let t = 15*60; clearInterval(timer);
+            timer = setInterval(() => {
+                t--; let m = Math.floor(t/60), s = t%60;
+                document.getElementById('timer-text').innerText = `TTL: ${m}:${s<10?'0':''}${s}`;
+                document.getElementById('timer-line').style.width = (t/(15*60))*100 + '%';
+                if(t<=0) closePay();
+            }, 1000);
+        }
+
+        function closePay() { document.getElementById('modal-pay').classList.add('hidden'); clearInterval(timer); }
+
+        async function sendOrder() {
+            const btn = document.getElementById('pay-btn');
+            btn.innerText = "AUTHENTICATING..."; btn.disabled = true;
+            await api({ action: 'createOrder', itemId: currentItem.id, price: currentItem.price });
+            closePay();
+            tg.showAlert("Request Logged. Transfer funds to Gateway. Activation occurs after confirmation.");
+            btn.disabled = false; btn.innerText = "Execute_Request";
+        }
+
+        function copyWallet() { 
+            navigator.clipboard.writeText(document.getElementById('wallet').innerText); 
+            tg.showAlert("Address Copied"); 
+        }
+
+        function startLiveTraffic() {
+            setInterval(() => {
+                currentTraffic += (Math.random() * 0.005 + 0.001);
+                document.getElementById('stat-traffic').innerText = currentTraffic.toFixed(3);
+                if (Math.random() > 0.8) {
+                    let n = document.getElementById('stat-nodes');
+                    n.innerText = parseInt(n.innerText) + (Math.random() > 0.5 ? 1 : -1);
+                }
+            }, 2000);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
